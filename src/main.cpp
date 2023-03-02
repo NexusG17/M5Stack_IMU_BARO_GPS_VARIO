@@ -40,6 +40,7 @@ volatile int AudioCps;
 volatile float YawDeg, PitchDeg, RollDeg;
 volatile SemaphoreHandle_t DrdySemaphore;
 volatile bool DrdyFlag = false;
+volatile bool chien = true;
 
 int BacklitCounter;
 bool IsGpsInitComplete = false;
