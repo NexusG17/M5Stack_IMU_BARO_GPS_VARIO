@@ -27,7 +27,7 @@
 #define pinVMISO    19
 
 #define pinImuCS    17 
-#define pinFlashCS  5
+
 
 
 // chip select for MS5611 and BMP388 different for testing purposes
@@ -43,67 +43,12 @@
 #define IMU_CS_LO() 	{GPIO.out_w1tc = (1 << pinImuCS);}
 #define BARO_CS_HI() 	{GPIO.out_w1ts = (1 << pinBaroCS);}
 #define BARO_CS_LO() 	{GPIO.out_w1tc = (1 << pinBaroCS);}
-#define FLASH_CS_HI()   {GPIO.out_w1ts = (1 << pinFlashCS);}
-#define FLASH_CS_LO()   {GPIO.out_w1tc = (1 << pinFlashCS);}
+
 
 #define pinDRDYINT  4
 
-#define pinGpsTXD   21
-#define pinGpsRXD   22
-#define pinGpsRTS  (-1)
-#define pinGpsCTS  (-1)
 
-#define GPS_UART_NUM          UART_NUM_1
-#define UART_RX_BUFFER_SIZE   256
 
-#define pinBtn0     0
-#define pinBtnL     36
-#define pinBtnM     34
-#define pinBtnR     39
-
-#define BTN0()	((GPIO.in >> pinBtn0) & 0x1)
-#define BTNL()  ((GPIO.in1.val >> (pinBtnL - 32)) & 0x1)
-#define BTNM()  ((GPIO.in1.val >> (pinBtnM - 32)) & 0x1)
-#define BTNR()  ((GPIO.in1.val >> (pinBtnR - 32)) & 0x1)
-
-// lcd uses HSPI IOMux compatible pins, write-only (no need to reserve MISO pin)
-#define pinHSCLK    14
-#define pinHMOSI    27 
-
-#define pinLcdCS    12
-#define pinLcdRST   13
-#define pinLcdA0    26
-#define pinLcdBklt  33
-
-#define LCD_CS_HI()     {GPIO.out_w1ts  = 1 << pinLcdCS;}
-#define LCD_CS_LO()     {GPIO.out_w1tc = 1 << pinLcdCS;}
-
-#define LCD_RST_HI()    {GPIO.out_w1ts = 1 << pinLcdRST;}
-#define LCD_RST_LO()    {GPIO.out_w1tc = 1 << pinLcdRST;}
-
-#define LCD_A0_HI()     {GPIO.out_w1ts = 1 << pinLcdA0;}
-#define LCD_A0_LO()     {GPIO.out_w1tc = 1 << pinLcdA0;}
-
-#define LCD_BKLT_ON()   {GPIO.out1_w1ts.val = 1 << (pinLcdBklt - 32);}
-#define LCD_BKLT_OFF()  {GPIO.out1_w1tc.val = 1 << (pinLcdBklt - 32);}
-
-#define HSPI_CLK_FREQHZ 4000000
-
-#define pinLED      2
-
-#define LED_ON()        {GPIO.out_w1ts = (1 << pinLED);}
-#define LED_OFF()       {GPIO.out_w1tc = (1 << pinLED);}
-
-#define pinAudioAmpEna  32
-#define pinAudioDAC     25
-
-// using NS8002 amp module, shutdown pin is pulled up to 5V via external 100K resistor. Pull down to enable
-#define AUDIO_AMP_ENABLE()   {GPIO.out1_w1tc.val = ((uint32_t)1 << (pinAudioAmpEna - 32));}
-#define AUDIO_AMP_DISABLE()  {GPIO.out1_w1ts.val = ((uint32_t)1 << (pinAudioAmpEna - 32));}
-
-#define FLASH_W25Q128  // 128Mbit 104MHz
-
-#define pinADC      35
 
 ////////////////////////////////////////////////////////////////////
 // USER-CONFIGURABLE PARAMETER DEFAULTS AND LIMITS
