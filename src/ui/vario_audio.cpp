@@ -1,8 +1,8 @@
 #include "common.h"
 #include "config.h"
 #include "nv/options.h"
-//#include "drv/audio.h"
 #include "vario_audio.h"
+#include "M5Stack.h"
 
 static const char* TAG = "vario_audio";
 // indicate climb/sink rates beyond + / - 10m/s with offscale warbling tones
@@ -64,7 +64,8 @@ static void vaudio_reset(int32_t cps) {
 			BeepPeriodTicks = 8;
 			BeepEndTick = 8;
 			CurrentFreqHz = OffScaleLoTone[0];
-			audio_set_frequency(CurrentFreqHz);
+			
+			M5.Speaker.tone(CurrentFreqHz);
 			}
 		else {
 			// sink indicated with descending frequency beeps with long on-times
@@ -73,7 +74,7 @@ static void vaudio_reset(int32_t cps) {
 			BeepEndTick  = 30;
 			CurrentFreqHz = VARIO_SPKR_MAX_FREQHZ/2 + ((CurrentCps + VARIO_MAX_CPS)*(VARIO_SPKR_MIN_FREQHZ + 600 - VARIO_SPKR_MAX_FREQHZ/2))/(SINK_CPS + VARIO_MAX_CPS);
 			CLAMP(CurrentFreqHz, VARIO_SPKR_MIN_FREQHZ, VARIO_SPKR_MAX_FREQHZ);
-			audio_set_frequency(CurrentFreqHz);
+			M5.Speaker.tone(CurrentFreqHz);
 			}
         }
     else {
@@ -83,7 +84,7 @@ static void vaudio_reset(int32_t cps) {
 				BeepPeriodTicks = 8;
 				BeepEndTick = 8;
 				CurrentFreqHz = OffScaleHiTone[0];
-				audio_set_frequency(CurrentFreqHz);
+				M5.Speaker.tone(CurrentFreqHz);
 				}
 			else {
 				// climb beep period reduces with higher climbrate
@@ -99,7 +100,7 @@ static void vaudio_reset(int32_t cps) {
 					CurrentFreqHz = VARIO_SPKR_MIN_FREQHZ + ((CurrentCps - ZERO_CPS)*(VARIO_CROSSOVER_FREQHZ - VARIO_SPKR_MIN_FREQHZ))/(CROSSOVER_CPS - ZERO_CPS);
 					}
 				CLAMP(CurrentFreqHz, VARIO_SPKR_MIN_FREQHZ, VARIO_SPKR_MAX_FREQHZ);
-				audio_set_frequency(CurrentFreqHz);
+				M5.Speaker.tone(CurrentFreqHz);
 				}
 			}
 		else 
@@ -109,14 +110,14 @@ static void vaudio_reset(int32_t cps) {
 			BeepEndTick = 2;
 			CurrentFreqHz = VARIO_SPKR_MIN_FREQHZ + ((CurrentCps - ZERO_CPS)*(VARIO_CROSSOVER_FREQHZ - VARIO_SPKR_MIN_FREQHZ))/(CROSSOVER_CPS - ZERO_CPS);
 			CLAMP(CurrentFreqHz, VARIO_SPKR_MIN_FREQHZ, VARIO_SPKR_MAX_FREQHZ);
-			audio_set_frequency(CurrentFreqHz);
+			M5.Speaker.tone(CurrentFreqHz);
 			}            
 		else {
 			// between sink and zero threshold, be quiet
 			BeepPeriodTicks = 0;
 			BeepEndTick  = 0;
 			CurrentFreqHz = 0;
-			audio_set_frequency(CurrentFreqHz);
+			M5.Speaker.tone(CurrentFreqHz);
 			}
 		}
 	}
@@ -161,7 +162,7 @@ void vaudio_tick_handler(int32_t cps) {
 			}
 		if (freqHz != CurrentFreqHz) {
 			CurrentFreqHz = freqHz;
-			audio_set_frequency(CurrentFreqHz);
+			M5.Speaker.tone(CurrentFreqHz);
 			}
 		}
 	}

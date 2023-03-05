@@ -13768,7 +13768,7 @@
     "theme_dark": false,
     "theme_color1": 5,
     "theme_color2": 0,
-    "exportFolderPath": "C:\\Users\\Gabriel\\Documents\\PlatformIO\\Projects\\M5Stack_IMU_BARO_GPS_VARIO\\lib\\ui",
+    "exportFolderPath": "C:\\Users\\Gabriel\\Documents\\GitHub\\M5Stack_IMU_BARO_GPS_VARIO\\lib\\ui",
     "backup_cnt": 822,
     "autosave_cnt": 0,
     "lvgl_version": "8.2.0",

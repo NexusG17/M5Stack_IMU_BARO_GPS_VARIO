@@ -1,5 +1,5 @@
 
-#include <M5Core2.h>
+#include <M5Stack.h>
 #include "common.h"
 #include "config.h"
 #include "drv/cct.h"
@@ -20,7 +20,7 @@
 
 static const char* TAG = "main";
 
-volatile float KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps;
+volatile float KFAltitudeCm, KFClimbrateCps,DisplayClimbrateCps; // Cps : centimeter per second
 volatile int AudioCps;
 volatile float YawDeg, PitchDeg, RollDeg;
 volatile SemaphoreHandle_t DrdySemaphore;
@@ -31,6 +31,7 @@ static void pinConfig();
 static void vario_taskConfig();
 static void vario_task(void *pvParameter);
 static void main_task(void* pvParameter);
+
 static void IRAM_ATTR drdyHandler(void);
 
 void pinConfig() {	
@@ -144,7 +145,8 @@ static void vario_taskConfig() {
 #elif USE_BMP388    
     if (bmp388_config() < 0) {
         ESP_LOGE(TAG, "error BMP388 config");
-        lcd_printlnf(true,3, "BMP388 config fail");
+        //lcd_printlnf(true,3, "BMP388 config fail");
+        M5.Lcd.println("BMP388 config fail");
         while (1) {delayMs(100);}
         }	
     {
@@ -169,7 +171,10 @@ static void vario_taskConfig() {
     M5.lcd.printf("Baro Altitude %dm\n", (int)(zcm/100.0f));
     // switch to high clock frequency for sensor readout & flash writes
     vspi_setClockFreq(VSPI_CLK_HIGH_FREQHZ); 
+
     vaudio_config();
+
+
     ringbuf_init(); 
     }
 
@@ -247,22 +252,14 @@ static void vario_task(void *pvParameter) {
             bmp388_sample();
             // KF4 uses the acceleration data in the update phase
             float zAccelAverage = ringbuf_averageNewestSamples(10); 
-            kalmanFilter4_predict(kfTimeDeltaUSecs/1000000.0f);
-            kalmanFilter4_update(ZCmSample_BMP388, zAccelAverage, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
+            kalmanFilter4d_predict(kfTimeDeltaUSecs/1000000.0f);
+            kalmanFilter4d_update(ZCmSample_BMP388, zAccelAverage, (float*)&KFAltitudeCm, (float*)&KFClimbrateCps);
             kfTimeDeltaUSecs = 0.0f;
             // LCD display shows damped climbrate
             DisplayClimbrateCps = (DisplayClimbrateCps*(float)opt.vario.varioDisplayIIR + KFClimbrateCps*(100.0f - (float)opt.vario.varioDisplayIIR))/100.0f; 
             int32_t audioCps = INTEGER_ROUNDUP(KFClimbrateCps);
-            if (IsSpeakerEnabled) {
-                beeper_beep(audioCps);                
-                }
-		    if ((opt.misc.logType == LOGTYPE_IBG) && FlashLogMutex) {
-		        if ( xSemaphoreTake( FlashLogMutex, portMAX_DELAY )) {
-                    FlashLogIBGRecord.hdr.baroFlags = 1;
-	                FlashLogIBGRecord.baro.heightMSLcm = ZCmSample_BMP388;
-					xSemaphoreGive( FlashLogMutex );
-					}
-				}
+            vaudio_tick_handler(AudioCps);
+		    
             }    
 #endif
          
@@ -298,6 +295,8 @@ static void vario_task(void *pvParameter) {
         }
     vTaskDelete(NULL);
     }
+
+
 
 
 static void main_task(void* pvParameter) {

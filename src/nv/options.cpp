@@ -1,9 +1,9 @@
 #include "common.h"
-#include <FS.h>
-#include <LittleFS.h>
+//#include <FS.h>
+//#include <LittleFS.h>
 #include "config.h"
 #include "options.h"
-#include "ui/ui.h"
+//#include "ui/ui.h"
 
 static const char* TAG = "options";
 
