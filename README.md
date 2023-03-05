@@ -1,4 +1,4 @@
-# ESP32 GPS Altimeter Variometer
+# ESP32 GPS Altimeter Variometer (M5Stack Core version)
 
 <img src="docs/flight_deck.jpg"/>
 
