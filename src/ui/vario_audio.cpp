@@ -118,6 +118,7 @@ static void vaudio_reset(int32_t cps) {
 			BeepEndTick  = 0;
 			CurrentFreqHz = 0;
 			M5.Speaker.tone(CurrentFreqHz);
+			// OU M5.Speaker.mute(); ?
 			}
 		}
 	}
@@ -163,6 +164,7 @@ void vaudio_tick_handler(int32_t cps) {
 		if (freqHz != CurrentFreqHz) {
 			CurrentFreqHz = freqHz;
 			M5.Speaker.tone(CurrentFreqHz);
+			// OU M5.Speaker.mute(); , si currentfreqhz == 0 ?
 			}
 		}
 	}

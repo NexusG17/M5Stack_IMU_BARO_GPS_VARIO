@@ -102,24 +102,20 @@
 #define _M5STACK_H_
 
 #if defined(ESP32)
-#define MPU9250_INSDE
 
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
-
 #include "FS.h"
 #include "M5Display.h"
 #include "SD.h"
 #include "gitTagVersion.h"
-#include "IMU.h"
 #include "utility/Button.h"
 #include "utility/CommUtil.h"
 #include "utility/Config.h"
 #include "utility/Power.h"
 #include "utility/Speaker.h"
-#include "utility/MPU6886.h"
-#include "utility/SH200Q.h"
+
 
 class M5Stack {
    public:
@@ -148,17 +144,11 @@ class M5Stack {
     // HardwareSerial Serial2 = HardwareSerial(2);
 
     // I2C
-    IMU Imu;
+   // IMU Imu;
     CommUtil I2C = CommUtil();
 
-    MPU6886 Mpu6886;
-    SH200Q Sh200Q;
-
-    // MPU9250
-#ifdef MPU9250_INSDE
-    #include "utility/MPU9250.h"
-    MPU9250 IMU = MPU9250();
-#endif
+   // MPU6886 Mpu6886;
+   // SH200Q Sh200Q;
 
     /**
      * Function has been move to Power class.(for compatibility)

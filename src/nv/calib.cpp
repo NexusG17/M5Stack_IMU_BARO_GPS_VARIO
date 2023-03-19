@@ -1,9 +1,7 @@
 #include "common.h"
-//#include <FS.h>
-//#include <LittleFS.h>
 #include "config.h"
 #include "calib.h"
-#include "M5Stack.h"
+#include <M5Stack.h>
 
 static const char* TAG = "calib";
 
@@ -14,8 +12,8 @@ bool IsCalibrated = false;
 int calib_init(void) {
    calib_setDefaults(); // set to defaults, override with calib.txt values
 
-   ESP_LOGD(TAG,"Opening LittleFS calib.txt file... ");
-   File fdcal = LittleFS.open("/calib.txt", FILE_READ);
+   ESP_LOGD(TAG,"Opening calib.txt file... ");
+   File fdcal = SD.open("/calib.txt", FILE_READ);
    if (!fdcal) {
       ESP_LOGD(TAG,"calib.txt file not found, creating with defaults");
       calib_save();
@@ -149,9 +147,9 @@ int calib_save() {
    ssize_t nwrote;
 
    ESP_LOGD(TAG, "deleting calib.txt");
-   LittleFS.remove("/calib.txt");
+   SD.remove("/calib.txt");
    ESP_LOGD(TAG, "Opening calib.txt to write");
-   File fdcal = LittleFS.open("/calib.txt", FILE_WRITE);
+   File fdcal = SD.open("/calib.txt", FILE_WRITE);
    if (!fdcal) {
       ESP_LOGE(TAG, "Error opening calib.txt to write");
       return -1;

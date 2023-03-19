@@ -30,7 +30,7 @@ modified by HN (used register declarations and configuration code)
 #include "nv/options.h"
 #include "nv/calib.h"
 #include "sensor/mpu9250.h"
-#include "ui/lcd7565.h"
+
 
 static int16_t axBias_;
 static int16_t ayBias_;

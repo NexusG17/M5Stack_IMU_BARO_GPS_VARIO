@@ -47,7 +47,13 @@
 
 #define pinDRDYINT  4
 
+#define pinGpsTXD   21
+#define pinGpsRXD   22
+#define pinGpsRTS  (-1)
+#define pinGpsCTS  (-1)
 
+#define GPS_UART_NUM          UART_NUM_1
+#define UART_RX_BUFFER_SIZE   256
 
 
 ////////////////////////////////////////////////////////////////////

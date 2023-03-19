@@ -3,7 +3,7 @@
 #include <driver/uart.h>
 #include "config.h"
 #include "drv/cct.h"
-#include "nv/flashlog.h"
+//#include "nv/flashlog.h"
 #include "nv/options.h"
 #include "ui/ui.h"
 #include "sensor/gps.h"
@@ -308,7 +308,7 @@ void gps_stateMachine()  {
 					   ESP_LOGE(TAG,"packet checksum error");
 	               }
 				   else {
-                  gps_updateFlashLogRecord();        
+                  //gps_updateFlashLogRecord();        
                   IsGpsNavUpdated = 1;
                   //ESP_LOGD(TAG, "NAV_PVT tow %d",NavPvt.timeOfWeekmS);
 	               PktReceivedBytes = 0;
@@ -322,7 +322,7 @@ void gps_stateMachine()  {
    } 
 
 
-void gps_updateFlashLogRecord() {
+/*void gps_updateFlashLogRecord() {
    static int counter = 0;
 	if ((opt.misc.logType == LOGTYPE_IBG) && FlashLogMutex) {
 		if (xSemaphoreTake( FlashLogMutex, portMAX_DELAY )) {
@@ -362,7 +362,7 @@ void gps_updateFlashLogRecord() {
          }
 		}		
 	}
-
+*/
 
 
 // great-circle distance using WGS-84 average earth radius

@@ -3,6 +3,7 @@
 
 #include "sensor/gps.h"
 
+
 #define MIN_VELOCITY_KPH	0
 #define MAX_VELOCITY_KPH	999
 
@@ -66,11 +67,7 @@ typedef struct TRACK_ {
    int     nextWptInx;
 } TRACK;
 
-void ui_updateFlightDisplay(NAV_PVT* pn, TRACK* ptrk);
-int  ui_saveFlightLogSummary(NAV_PVT* pn, TRACK* pTrk);
-bool ui_optionsEventHandler(void);
-void ui_screenInit();
-void ui_displayOptions(void);
+
 
 
 extern bool IsSpeakerEnabled;

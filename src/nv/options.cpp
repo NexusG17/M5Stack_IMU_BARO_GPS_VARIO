@@ -1,9 +1,8 @@
 #include "common.h"
-//#include <FS.h>
-//#include <LittleFS.h>
 #include "config.h"
 #include "options.h"
-//#include "ui/ui.h"
+#include <M5Stack.h>
+#include "ui/ui.h"
 
 static const char* TAG = "options";
 
@@ -14,8 +13,8 @@ int opt_init(void) {
    opt_setDefaults();
 
    // override defaults with any options found in options.txt
-   ESP_LOGD(TAG,"Opening LittleFS options.txt file... ");
-   File fdopt = LittleFS.open("/options.txt", FILE_READ);
+   ESP_LOGD(TAG,"Opening options.txt file... ");
+   File fdopt = SD.open("/options.txt", FILE_READ);
    if (!fdopt) {
       ESP_LOGD(TAG,"options.txt file not found, saving file with default values");
       opt_save();
@@ -255,8 +254,8 @@ int opt_save() {
     char buf[80];
     ssize_t nwrote;
 
-    LittleFS.remove("/options.txt");
-    File fdopt = LittleFS.open("/options.txt", FILE_WRITE);
+    SD.remove("/options.txt");
+    File fdopt = SD.open("/options.txt", FILE_WRITE);
     if (!fdopt) {
       ESP_LOGE(TAG, "Error opening options.txt to write");
       return -1;
@@ -349,7 +348,7 @@ int opt_save() {
     nwrote = fdopt.print(buf);
     if (nwrote != strlen(buf)) return -19;
 
-    sprintf(buf,"logType [NONE,GPS,IBG] %s\r\n", szLogType[opt.misc.logType]);
+    /*sprintf(buf,"logType [NONE,GPS,IBG] %s\r\n", szLogType[opt.misc.logType]);
     nwrote = fdopt.print(buf);
     if (nwrote != strlen(buf)) return -20;
 
@@ -363,7 +362,7 @@ int opt_save() {
 
     sprintf(buf,"btMsgType [LK8,XCT] %s\r\n", szBtMsgType[opt.misc.btMsgType]);
     nwrote = fdopt.print(buf);
-    if (nwrote != strlen(buf)) return -23;
+    if (nwrote != strlen(buf)) return -23;*/
 
     sprintf(buf,"btMsgFreqHz [%d,%d] %d\r\n", BT_MSG_FREQ_HZ_MIN, BT_MSG_FREQ_HZ_MAX, opt.misc.btMsgFreqHz);
     nwrote = fdopt.print(buf);

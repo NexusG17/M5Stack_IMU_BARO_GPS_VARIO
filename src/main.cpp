@@ -1,10 +1,12 @@
 
 #include <M5Stack.h>
+
 #include "common.h"
 #include "config.h"
 #include "drv/cct.h"
 #include "drv/vspi.h"
 #include "sensor/mpu9250.h"
+#include "sensor/gps.h"
 #include "sensor/ringbuf.h"
 #include "sensor/imu.h"
 #if USE_MS5611
@@ -15,7 +17,79 @@
 #include "sensor/kalmanfilter4d.h"
 #include "nv/calib.h"
 #include "nv/options.h"
+#include "bt/btmsg.h"
 #include "ui/vario_audio.h"
+#include "ui/ui.h"
+
+#include <lvgl.h>
+#include "ui.h"
+
+#define LV_HOR_RES_MAX 320
+#define LV_VER_RES_MAX 240
+#define LV_TICK_PERIOD_MS 5
+
+M5Display *tft;
+
+// init the tft espi
+static lv_disp_draw_buf_t draw_buf;
+static lv_disp_drv_t disp_drv;  // Descriptor of a display driver
+
+static void ta_event_cb(lv_event_t * e);
+static lv_obj_t * kb;
+
+
+static void ta_event_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t * ta = lv_event_get_target(e);
+    if(code == LV_EVENT_CLICKED || code == LV_EVENT_FOCUSED) {
+        /*Focus on the clicked text area*/
+        if(kb != NULL) lv_keyboard_set_textarea(kb, ta);
+    }
+
+    else if(code == LV_EVENT_READY) {
+        LV_LOG_USER("Ready, current text: %s", lv_textarea_get_text(ta));
+    }
+}
+
+void tft_lv_initialization() {
+  lv_init();
+
+  static lv_color_t buf1[(LV_HOR_RES_MAX * LV_VER_RES_MAX) / 10];  // Declare a buffer for 1/10 screen siz
+  static lv_color_t buf2[(LV_HOR_RES_MAX * LV_VER_RES_MAX) / 10];  // second buffer is optionnal
+
+  // Initialize `disp_buf` display buffer with the buffer(s).
+  lv_disp_draw_buf_init(&draw_buf, buf1, buf2, (LV_HOR_RES_MAX * LV_VER_RES_MAX) / 10);
+
+  tft = &M5.Lcd;
+}
+
+// Display flushing
+void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p) {
+  uint32_t w = (area->x2 - area->x1 + 1);
+  uint32_t h = (area->y2 - area->y1 + 1);
+
+  tft->startWrite();
+  tft->setAddrWindow(area->x1, area->y1, w, h);
+  tft->pushColors((uint16_t *)&color_p->full, w * h, true);
+  tft->endWrite();
+
+  lv_disp_flush_ready(disp);
+}
+
+void init_disp_driver() {
+  lv_disp_drv_init(&disp_drv);  // Basic initialization
+
+  disp_drv.flush_cb = my_disp_flush;  // Set your driver function
+  disp_drv.draw_buf = &draw_buf;      // Assign the buffer to the display
+  disp_drv.hor_res = LV_HOR_RES_MAX;  // Set the horizontal resolution of the display
+  disp_drv.ver_res = LV_VER_RES_MAX;  // Set the vertical resolution of the display
+
+  lv_disp_drv_register(&disp_drv);                   // Finally register the driver
+  lv_disp_set_bg_color(NULL, lv_color_hex3(0x000));  // Set default background color to black
+}
+
+
 
 
 static const char* TAG = "main";
@@ -26,13 +100,18 @@ volatile float YawDeg, PitchDeg, RollDeg;
 volatile SemaphoreHandle_t DrdySemaphore;
 volatile bool DrdyFlag = false;
 
+bool IsGpsInitComplete = false;
+bool IsServer = false; 
 
 static void pinConfig();
 static void vario_taskConfig();
+static void btserial_task(void *pvParameter);
+static void gps_task(void *pvParameter);
 static void vario_task(void *pvParameter);
 static void main_task(void* pvParameter);
 
 static void IRAM_ATTR drdyHandler(void);
+
 
 void pinConfig() {	
     
@@ -52,6 +131,25 @@ void pinConfig() {
 
 
 
+static void gps_task(void *pvParameter) {
+    ESP_LOGI(TAG, "Starting gps task on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+    if (!gps_config()) {
+        ESP_LOGE(TAG, "error configuring gps");
+		M5.Lcd.clear();
+        M5.Lcd.print("GPS init error\n");
+		
+        while (1) delayMs(100);
+        }
+    IsGpsInitComplete = true;
+    while(1) {
+        gps_stateMachine();
+        delayMs(5);
+        }
+    vTaskDelete(NULL);
+    }  
+
+
+
 static void IRAM_ATTR drdyHandler(void) {
 	DrdyFlag = true;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -61,6 +159,25 @@ static void IRAM_ATTR drdyHandler(void) {
 		}
 	
 	}
+
+ static void btserial_task(void *pvParameter) {
+    ESP_LOGI(TAG, "Starting btserial task on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+	char szmsg[100];
+
+    while (1) {
+		if (opt.misc.btMsgType == BT_MSG_LK8EX1) {
+            int32_t altM = KFAltitudeCm > 0.0f ? (int)((KFAltitudeCm + 50.0f)/100.0f) : (int)((KFAltitudeCm - 50.0f)/100.0f);
+			btmsg_genLK8EX1(szmsg, altM, AudioCps, SupplyVoltageV);
+			}
+		else
+		if (opt.misc.btMsgType == BT_MSG_XCTRC) {
+			btmsg_genXCTRC(szmsg);
+			}
+        btmsg_tx_message(szmsg);
+		delayMs(1000/opt.misc.btMsgFreqHz);
+		}
+    vTaskDelete(NULL);
+    }   
 
 
 static void vario_taskConfig() {
@@ -301,15 +418,15 @@ static void vario_task(void *pvParameter) {
 
 static void main_task(void* pvParameter) {
     pinConfig();
-    
+    btStop();
    
 
     // read calibration parameters from calib.txt
     calib_init();
 
-    // set default configuration parameters, then override them with configuration parameters read from options.txt
+    //set default configuration parameters, then override them with configuration parameters read from options.txt
     // so you only have to specify the parameters you want to modify, in the file options.txt
-    opt_init();
+   opt_init();
 
    
 
@@ -326,9 +443,24 @@ static void main_task(void* pvParameter) {
 
         // vario task on core 1 needs to complete all processing within 2mS IMU data sampling period,
         // given highest priority on core 1
-	    xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
-        
+    xTaskCreatePinnedToCore(&vario_task, "variotask", 4096, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
+       
+     IsGpsInitComplete = false;
+        // gps task on core 0 given max priority
+	    xTaskCreatePinnedToCore(&gps_task, "gpstask", 2048, NULL, configMAX_PRIORITIES-1, NULL, CORE_0);
+        while(!IsGpsInitComplete){
+            delayMs(10);
+            }
       
+ if (opt.misc.btMsgFreqHz != 0) {
+            if (btmsg_init() == true) {
+    		    IsBluetoothEnabled = true;
+                // bluetooth serial task on core 0 given higher priority than ui task, less than gps task
+    		    xTaskCreatePinnedToCore(&btserial_task, "btserialtask", 3072, NULL, configMAX_PRIORITIES-2, NULL, CORE_0);
+                }
+	    	}
+
+
     while (1) {
         loop();
         }
@@ -337,7 +469,9 @@ static void main_task(void* pvParameter) {
 
 // loop runs on core 1 with default priority = 1
 void loop() {
-    
+    //lv_timer_handler_run_in_period(5);   /* run lv_timer_handler() every 5ms */
+  vTaskDelay(5);                         /* delay 5ms to avoid unnecessary polling */
+  lv_task_handler();
 
     }
 
@@ -348,6 +482,11 @@ void loop() {
 // Core 1 : setup() + loop(), wifi config / vario task
 void setup() {
     M5.begin();
+    SD.begin();
+
+  tft_lv_initialization();
+  init_disp_driver();
+  ui_init();
 
     xTaskCreatePinnedToCore(&main_task, "main_task", 16384, NULL, configMAX_PRIORITIES-4, NULL, CORE_1);
     vTaskDelete(NULL);
